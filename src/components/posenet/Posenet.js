@@ -11,8 +11,9 @@ class Posenet extends Component  {
     flipHorizontal: true,
     algorithm: 'single-pose',
     showVideo: true,
-    showSkeleton: true,
+    showSkeleton: false,
     showPoints: true,
+    ignorePoints: [0,1,2,3,4,5,6,7,8,10,11,12,13,14,15,16],
     minPoseConfidence: 0.1,
     minPartConfidence: 0.5,
     maxPoseDetections: 2,
@@ -30,6 +31,14 @@ class Posenet extends Component  {
 
   getVideo = elem => {
     this.video = elem
+  }
+
+  getPosX = elem => {
+    this.posX = elem
+  }
+
+  getPosY = elem => {
+    this.posY = elem
   }
 
   async componentDidMount() {
@@ -108,7 +117,8 @@ class Posenet extends Component  {
       videoWidth, 
       videoHeight, 
       showVideo, 
-      showPoints, 
+      showPoints,
+      ignorePoints,
       showSkeleton, 
       skeletonColor, 
       skeletonLineWidth 
@@ -152,7 +162,7 @@ class Posenet extends Component  {
         canvasContext.drawImage(video, 0, 0, videoWidth, videoHeight)
         canvasContext.restore()
       }
-
+      
       poses.forEach(({score, keypoints}) => {
         if (score >= minPoseConfidence) {
           if (showPoints) {
@@ -160,6 +170,7 @@ class Posenet extends Component  {
               keypoints,
               minPartConfidence,
               skeletonColor,
+              ignorePoints,
               canvasContext
             )
           }
@@ -173,7 +184,16 @@ class Posenet extends Component  {
             )
           }
         }
+
+        // identifica pulso esquerdo
+        if (parseFloat(keypoints[9].score) > minPoseConfidence) {
+          const maoEsquerda = keypoints[9].position
+          this.posX.value = maoEsquerda.x
+          this.posY.value = maoEsquerda.y
+        }
+
       })
+      
       requestAnimationFrame(findPoseDetectionFrame)
     }
     findPoseDetectionFrame()
@@ -185,6 +205,10 @@ class Posenet extends Component  {
         <div>
           <video id="videoNoShow" playsInline ref={this.getVideo} />
           <canvas className="webcam" ref={this.getCanvas} />
+          <div id="pulsoEsquerdo">
+            <output name="posX" ref={this.getPosX}></output>
+            <output name="posY" ref={this.getPosY}></output>
+          </div>
         </div>
       </div>
     )

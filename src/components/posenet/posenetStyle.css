@@ -5,3 +5,16 @@
   -webkit-transform: scaleX(-1);
   display: none;
 }
+
+#pulsoEsquerdo {
+  position: absolute;
+  top: 50px;
+  left: 900px;
+  width: 320px;
+}
+
+#pulsoEsquerdo output {
+  width: 150px;
+  display: inline-block;
+  border: solid;
+}

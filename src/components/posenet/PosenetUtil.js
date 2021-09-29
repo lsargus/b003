@@ -10,11 +10,12 @@ export function drawKeyPoints(
   keypoints,
   minConfidence,
   skeletonColor,
+  ignorePoints,
   canvasContext,
   scale = 1
 ) {
-  keypoints.forEach(keypoint => {
-    if (keypoint.score >= minConfidence) {
+  keypoints.forEach((keypoint, index) => {
+    if (keypoint.score >= minConfidence && !ignorePoints.includes(index)) {
       const {x, y} = keypoint.position
       canvasContext.beginPath()
       canvasContext.arc(x * scale, y * scale, pointRadius, 0, 2 * Math.PI)
