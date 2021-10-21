@@ -2,7 +2,11 @@ import React, {Component} from 'react'
 import backend from '@tensorflow/tfjs-backend-webgl'
 import * as posenet from "@tensorflow-models/posenet";
 import { drawKeyPoints, drawSkeleton } from "./PosenetUtil";
+import { sendPosBody } from "./PostmanRequests"
 import "./posenetStyle.css";
+
+var sendRequest = false;
+var timer;
 
 class Posenet extends Component  {
   static defaultProps = {
@@ -51,7 +55,17 @@ class Posenet extends Component  {
     }
 
     try {
-      this.posenet = await posenet.load()
+      /*this.posenet = await posenet.load({
+        architecture: 'ResNet50',
+        outputStride: 32,
+        quantBytes: 1
+      })*/
+
+      this.posenet = await posenet.load({
+        architecture: 'MobileNetV1',
+        outputStride: 16,
+        multiplier: 0.75
+      })
     } catch (error) {
       throw new Error('PoseNet failed to load' + error)
     } finally {
@@ -190,14 +204,41 @@ class Posenet extends Component  {
           const maoEsquerda = keypoints[9].position
           this.posX.value = maoEsquerda.x
           this.posY.value = maoEsquerda.y
+
+          let targetX = 450
+          let targetY = 450
+
+          let dist = Math.sqrt(Math.pow((maoEsquerda.x - targetX),2) + Math.pow((maoEsquerda.y - targetY),2))
+          this.timerRequest(maoEsquerda.x, maoEsquerda.y, 9, dist)
         }
 
       })
-      
+      this.drawCanvas(canvasContext)
       requestAnimationFrame(findPoseDetectionFrame)
     }
+    
     findPoseDetectionFrame()
   }
+
+  drawCanvas(canvasContext) {
+    canvasContext.beginPath()
+    canvasContext.arc(450, 450, 50, 0, 2 * Math.PI)
+    canvasContext.strokeStyle = "#FF0000"
+    canvasContext.lineWidth = 5
+    canvasContext.stroke()
+  }
+
+  timerRequest(x, y, codParte, dist) {
+    if (!sendRequest && dist < 50) {
+      timer = setTimeout(sendPosBody(x,y,codParte), 2000)
+      sendRequest = true
+    }
+    if (dist >= 100) {
+      clearTimeout(timer)
+      sendRequest = false
+    }
+ }
+  
 
   render() {
     return (
