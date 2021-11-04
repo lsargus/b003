@@ -2,7 +2,7 @@ import React, {Component} from 'react'
 import backend from '@tensorflow/tfjs-backend-webgl'
 import * as posenet from "@tensorflow-models/posenet";
 import { drawKeyPoints, drawSkeleton } from "./PosenetUtil";
-import { sendPosBody } from "./PostmanRequests"
+import { acenderLamp, apagarLamp } from "./PostmanRequests"
 import "./posenetStyle.css";
 
 var sendRequest = false;
@@ -26,7 +26,8 @@ class Posenet extends Component  {
     imageScaleFactor: 0.5,
     skeletonColor: '#1389eb',
     skeletonLineWidth: 6,
-    loadingText: 'Carregando...'
+    loadingText: 'Carregando...',
+    circleRadius: 50
   }
 
   getCanvas = elem => {
@@ -135,7 +136,8 @@ class Posenet extends Component  {
       ignorePoints,
       showSkeleton, 
       skeletonColor, 
-      skeletonLineWidth 
+      skeletonLineWidth,
+      circleRadius
       } = this.props
 
     const posenetModel = this.posenet
@@ -208,32 +210,49 @@ class Posenet extends Component  {
           let targetX = 450
           let targetY = 450
 
-          let dist = Math.sqrt(Math.pow((maoEsquerda.x - targetX),2) + Math.pow((maoEsquerda.y - targetY),2))
-          this.timerRequest(maoEsquerda.x, maoEsquerda.y, 9, dist)
+          let distSim = Math.sqrt(Math.pow((maoEsquerda.x - targetX),2) + Math.pow((maoEsquerda.y - targetY),2))
+
+          targetX = 350
+
+          let distNao = Math.sqrt(Math.pow((maoEsquerda.x - targetX),2) + Math.pow((maoEsquerda.y - targetY),2))
+
+          this.timerRequest(maoEsquerda.x, maoEsquerda.y, 9, distSim, distNao)
         }
 
       })
-      this.drawCanvas(canvasContext)
+      this.drawCanvas(canvasContext, circleRadius)
       requestAnimationFrame(findPoseDetectionFrame)
     }
     
     findPoseDetectionFrame()
   }
 
-  drawCanvas(canvasContext) {
+  drawCanvas(canvasContext, circleRadius) {
+    // circulo sim
     canvasContext.beginPath()
-    canvasContext.arc(450, 450, 50, 0, 2 * Math.PI)
-    canvasContext.strokeStyle = "#FF0000"
+    canvasContext.arc(450, 450, circleRadius, 0, 2 * Math.PI)
+    canvasContext.strokeStyle = "#24FC03"
+    canvasContext.lineWidth = 5
+    canvasContext.stroke()
+
+    // circulo não
+    canvasContext.beginPath()
+    canvasContext.arc(350, 450, circleRadius, 0, 2 * Math.PI)
+    canvasContext.strokeStyle = "#FC1703"
     canvasContext.lineWidth = 5
     canvasContext.stroke()
   }
 
-  timerRequest(x, y, codParte, dist) {
-    if (!sendRequest && dist < 50) {
-      timer = setTimeout(sendPosBody(x,y,codParte), 2000)
+  timerRequest(x, y, codParte, distSim, distNao) {
+    if (!sendRequest && distSim < 50) {
+      timer = setTimeout(acenderLamp(x,y,codParte), 2000)
       sendRequest = true
     }
-    if (dist >= 100) {
+    if (!sendRequest && distNao < 50) {
+      timer = setTimeout(apagarLamp(x,y,codParte), 2000)
+      sendRequest = true
+    }
+    if (distSim >= 50 && distNao >= 50) {
       clearTimeout(timer)
       sendRequest = false
     }
